@@ -1,0 +1,25 @@
+class Functions
+  #attr_accesible :variables
+  
+  def initialize
+    @variables = Variables.new
+  end
+  ########multiple declaration supported
+  def declare(var, value)
+    @variables.update_variable { var => value }
+  end
+  
+  def compute(var, value)
+    @variables.update_variable { var => value }
+  end
+  
+  def eval (arg1, arg2, log)
+    return :UNDEFINED if arg1 == :UNDEFINED || arg == :UNDEFINED
+    return arg1 && arg2 if log == :AND
+    return arg1 || arg2 if log == :OR
+  end
+  
+  def print(var)
+    puts @variables[var]
+  end
+end

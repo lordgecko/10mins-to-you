@@ -1,0 +1,14 @@
+#method for getting the result
+class PrintMethod
+  attr_accessor :var_args
+  def initialize(variables, messages)
+    @variables = variables
+    @messages = messages
+    @var_args = []
+  end
+  
+  def execute
+    @messages[:success] <<  (@variables.get_value @var_args[0]).to_s
+  end
+  
+end

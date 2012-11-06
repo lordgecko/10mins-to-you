@@ -1,0 +1,13 @@
+class TextFile < ActiveRecord::Base
+  # attr_accessible :title, :body
+  
+  def self.save(file, name)
+    name = "./public/" + name
+    File.open(name, "wb") { |f| f.write(file.read) }
+  end
+  
+  def self.result_to_file(name,result)
+    name = "./public/" + name
+    File.open(name, "wb") { |f| f.write(result)}
+  end
+end

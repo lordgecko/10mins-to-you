@@ -1,0 +1,5 @@
+require './lib/parser/tokenizer'
+require './lib/parser/parser'
+class Interpreter < ActiveRecord::Base
+  # attr_accessible :title, :body
+end

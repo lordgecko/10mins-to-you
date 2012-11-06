@@ -1,0 +1,144 @@
+require './lib/parser/variables'
+require './lib/parser/declare_method'
+require './lib/parser/compute_method'
+require './lib/parser/print_method'
+require './lib/parser/eval_method'
+
+class Parser
+#main class for the parser, containing the parser tree
+#secventially interprets input
+  attr_accessor :output
+  attr_reader :messages
+  def initialize
+    @variables = Variables.new
+    @methods = []
+    @messages = {:error => "", :success => ""}
+  end
+  
+  #any errors during interpretation
+  def without_error?
+    return @messages[:error].blank?
+  end
+  
+  
+  class Node
+  #nested class for a node of the tree
+    attr_accessor :name, :action, :children
+    
+    def initialize (name, children = {})
+      @name, @children = name, children
+    end
+    
+    def add_child(key, node)
+      @children[key] = node
+    end
+    
+    def has_child?(name)
+      children.has_key?(name)
+    end
+    
+    def next(name)
+      return @children[name]
+    end
+  end
+  
+  def build_tree
+  #contruction of the parser tree
+    @tree = Node.new :BEGIN
+    temp = @tree
+    temp.add_child( :print, Node.new( :print, 
+                  { :lbrace => Node.new( :lbrace,
+                    { :var => Node.new( :var,
+                      { :rbrace => Node.new( :rbrace,
+                        { :semicol => @tree } )} )} )} )
+                    )
+    temp.add_child( :dec, Node.new( :dec,
+                  { :lbrace => Node.new( :lbrace,
+                    { :var => Node.new( :var,
+                      { :comma => Node.new( :comma,
+                        { :bool => Node.new( :bool,
+                          { :rbrace => Node.new( :rbrace,
+                            { :semicol => @tree } )} )} )} )} )} )
+                    )
+    temp.add_child( :comp, Node.new( :comp,
+                  { :lbrace => Node.new( :lbrace,
+                    { :var => Node.new( :var,
+                      { :comma => Node.new( :comma,
+                        { :eval => Node.new( :eval,
+                          { :lbrace => lbracenode = Node.new( :lbrace,
+                            { :lbrace => lbracenode, :var => varnode = Node.new( :var,
+                              {:rbrace => rbracenode = Node.new( :rbrace, {}), :log => 
+                                                          lognode = Node.new( :log, {} ) 
+                                                          } )} )} )} )} )}) })
+                     )
+     rbracenode.add_child :rbrace, rbracenode
+     rbracenode.add_child :log, lognode
+     rbracenode.add_child :semicol, @tree
+     lognode.add_child :var, varnode
+     lognode.add_child :lbrace, lbracenode
+     @current_node = @tree
+  end
+  
+  def accepts?(token_name)
+  #see if next token is valid
+    @current_node.has_child?(token_name)
+  end
+  
+  def feed_token(token)
+    if token.is_a?(Hash)
+      token_name = token.keys.first
+      token_value = token[token_name]
+    else
+      token_name = token
+    end
+    if token_name == :UNDEFINED_TOKEN
+      @messages[:error] = "Gramatical error, undefined word near " + token_value.to_s
+    end
+    if self.accepts?(token_name) && self.without_error?
+      @current_node = @current_node.next(token_name)
+      
+      @new_method = DeclareMethod.new(@variables)    if token_name == :dec
+      @new_method = PrintMethod.new(@variables, @messages)      if token_name == :print
+      @new_method = ComputeMethod.new(@variables)    if token_name == :comp
+      @new_method = EvalMethod.new(@variables)       if token_name == :eval
+      
+      if token_name == :lbrace
+        @methods << @new_method
+        unless @methods[1].nil?
+          @new_method = EvalMethod.new(@variables)
+        end
+        elsif token_name == :var
+          if @methods.last.is_a? EvalMethod
+            @methods.last.add_arg token_value
+          else
+            @methods.last.var_args << token_value
+          end
+          elsif token_name == :bool
+            @methods.last.var_args << token_value
+            elsif token_name == :log
+              @methods.last.add_arg token_value
+              elsif token_name == :rbrace
+                unless @methods[1].nil?
+                  temp =  @methods.pop.execute
+                  if @methods.last.is_a? EvalMethod
+                     @methods.last.add_arg temp
+                  else
+                    @methods.last.var_args << temp
+                  end
+                end
+                elsif token_name == :semicol
+                  if @methods.length == 1
+                    @methods.pop.execute
+                  else
+                    @messages[:error] = "Error, unbalanced braces"
+                  end
+       end
+    else
+      if self.without_error?
+        @messages[:error] =  "Sintax error, unexcepted: #{token_name.to_s} in #{(@methods.empty? ?
+                                                  @new_method.class.to_s : @methods.last.class.to_s )}"
+      end
+    end
+    return self.without_error?
+  end
+end

@@ -1,0 +1,13 @@
+declare(cameOnTime, true);
+declare(hasAdequateImagination, true);
+declare(hasTehnicalSkills, true);
+declare(hasTheoreticalSkills, true);
+declare(hasExperience, true);
+
+compute(isAbleToCompleteTask, eval(cameOnTime AND (hasAdequateImagination OR hasTehnicalSkills)));
+compute(goodCodingStyle, eval(hasTehnicalSkills AND hasTheoreticalSkills));
+compute(elegantCodeStructure, eval(hasTehnicalSkills AND hasTheoreticalSkills));
+
+compute(willBeHired, eval(isAbleToCompleteTask AND goodCodingStyle AND elegantCodeStructure));
+
+print(willBeHired);

@@ -1,0 +1,20 @@
+class Variables
+  #hash of varName => value pairs
+  
+  def initialize()
+    @table = Hash.new(:UNDEFINED)
+  end
+  
+  def set_variable(var,val)
+    @table[var] = val
+  end
+  
+  def get_value(var)
+    @table[var]
+  end
+  
+  def has_variable?(var)
+    @table.has_key?(var)
+  end
+  
+end
